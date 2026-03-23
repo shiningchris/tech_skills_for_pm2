@@ -11,7 +11,11 @@ import {
 } from 'react-native-paper';
 import { suggestDocumentChanges } from '../services/DocumentAnalyzer';
 
-export default function ChangeSuggester({ documentText }) {
+export default function ChangeSuggester({
+  documentText,
+  onSuggestionsGenerated,
+  onNavigateToComments,
+}) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -27,6 +31,10 @@ export default function ChangeSuggester({ documentText }) {
     try {
       const changes = await suggestDocumentChanges(documentText);
       setSuggestions(changes);
+      // Lift state to parent App.js
+      if (onSuggestionsGenerated) {
+        onSuggestionsGenerated(changes);
+      }
     } catch (error) {
       console.error('Error generating suggestions:', error);
     } finally {
@@ -177,8 +185,18 @@ export default function ChangeSuggester({ documentText }) {
             Review each suggestion and consider implementing the changes that
             best fit your needs.
           </Text>
+          {onNavigateToComments && (
+            <Button
+              mode="contained"
+              icon="comment-plus"
+              style={styles.exportButton}
+              onPress={onNavigateToComments}
+            >
+              Next: Add Comments
+            </Button>
+          )}
           <Button
-            mode="contained"
+            mode={onNavigateToComments ? 'outlined' : 'contained'}
             icon="download"
             style={styles.exportButton}
             onPress={() => {
@@ -239,7 +257,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 10,
-    color: '#666',
   },
   summaryCard: {
     marginBottom: 15,
@@ -247,11 +264,9 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     marginTop: 10,
-    color: '#666',
   },
   suggestionCard: {
     margin: 10,
-    backgroundColor: '#f9f9f9',
   },
   priorityRow: {
     flexDirection: 'row',
@@ -275,18 +290,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   issueText: {
-    color: '#d32f2f',
+    color: '#D32F2F', // Error red (theme color)
     fontWeight: '500',
     padding: 10,
-    backgroundColor: '#ffebee',
+    backgroundColor: '#FFEBEE', // Light red background
     borderRadius: 5,
   },
   reasonText: {
     lineHeight: 22,
-    color: '#555',
   },
   changeCard: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#E8F5E9', // Light green background for recommended change
     marginTop: 5,
   },
   bulletPoint: {
@@ -295,9 +309,7 @@ const styles = StyleSheet.create({
   },
   exampleText: {
     fontStyle: 'italic',
-    color: '#666',
     padding: 10,
-    backgroundColor: '#fff',
     borderRadius: 5,
   },
   divider: {
@@ -311,7 +323,6 @@ const styles = StyleSheet.create({
   actionText: {
     marginTop: 10,
     marginBottom: 15,
-    color: '#666',
   },
   exportButton: {
     marginTop: 10,

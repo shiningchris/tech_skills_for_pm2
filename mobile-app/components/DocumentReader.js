@@ -139,7 +139,6 @@ const styles = StyleSheet.create({
   },
   description: {
     marginBottom: 15,
-    color: '#666',
   },
   button: {
     marginTop: 10,

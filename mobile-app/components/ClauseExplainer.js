@@ -10,7 +10,7 @@ import {
 } from 'react-native-paper';
 import { analyzeDocumentClauses } from '../services/DocumentAnalyzer';
 
-export default function ClauseExplainer({ documentText }) {
+export default function ClauseExplainer({ documentText, onClausesAnalyzed }) {
   const [clauses, setClauses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
@@ -26,6 +26,10 @@ export default function ClauseExplainer({ documentText }) {
     try {
       const analyzedClauses = await analyzeDocumentClauses(documentText);
       setClauses(analyzedClauses);
+      // Lift state to parent App.js
+      if (onClausesAnalyzed) {
+        onClausesAnalyzed(analyzedClauses);
+      }
     } catch (error) {
       console.error('Error analyzing clauses:', error);
     } finally {
@@ -137,13 +141,13 @@ export default function ClauseExplainer({ documentText }) {
 const getImportanceColor = (importance) => {
   switch (importance.toLowerCase()) {
     case 'high':
-      return '#ffcdd2';
+      return '#FFCDD2'; // Light red for high importance
     case 'medium':
-      return '#fff9c4';
+      return '#FFF9C4'; // Light yellow for medium importance
     case 'low':
-      return '#c8e6c9';
+      return '#C8E6C9'; // Light green for low importance
     default:
-      return '#e0e0e0';
+      return '#E0E0E0'; // Light gray for undefined
   }
 };
 
@@ -166,7 +170,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 10,
-    color: '#666',
   },
   summaryCard: {
     marginBottom: 15,
@@ -174,11 +177,9 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     marginTop: 10,
-    color: '#666',
   },
   clauseCard: {
     margin: 10,
-    backgroundColor: '#f9f9f9',
   },
   sectionTitle: {
     marginTop: 10,
@@ -187,14 +188,11 @@ const styles = StyleSheet.create({
   },
   clauseText: {
     fontStyle: 'italic',
-    color: '#555',
     padding: 10,
-    backgroundColor: '#fff',
     borderRadius: 5,
   },
   explanation: {
     lineHeight: 22,
-    color: '#333',
   },
   bulletPoint: {
     marginLeft: 10,
