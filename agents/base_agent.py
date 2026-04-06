@@ -29,6 +29,7 @@ class BaseAgent(ABC):
         brief: ProductBrief,
         instruction: str,
         round_number: int,
+        max_tokens: int = None,
     ) -> AgentMessage:
         """
         Call the Anthropic API with the full shared conversation history.
@@ -37,7 +38,7 @@ class BaseAgent(ABC):
         """
         response = self.client.messages.create(
             model=self.config.MODEL_NAME,
-            max_tokens=self.config.MAX_TOKENS_PER_RESPONSE,
+            max_tokens=max_tokens or self.config.MAX_TOKENS_PER_RESPONSE,
             temperature=self.config.TEMPERATURE,
             system=self.system_prompt,
             messages=conversation_history,

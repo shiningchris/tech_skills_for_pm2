@@ -185,6 +185,7 @@ class DebateOrchestrator:
             brief=brief,
             instruction=synthesis_prompt,
             round_number=rounds_completed,
+            max_tokens=2048,  # scorecard JSON needs more room than regular responses
         )
         self.bus.add_agent_response(pm_msg)
         return self._parse_scorecard(pm_msg.content, rounds_completed, consensus)
