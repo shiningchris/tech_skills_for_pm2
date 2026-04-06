@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import List, Optional
+
 from models.message import AgentMessage
 
 
@@ -35,7 +39,7 @@ class MessageBus:
     def get_round_messages(self, round_num: int) -> list[AgentMessage]:
         return [m for m in self.agent_messages if m.round_number == round_num]
 
-    def last_pm_message(self) -> str | None:
+    def last_pm_message(self) -> Optional[str]:
         for msg in reversed(self.agent_messages):
             if msg.agent_name == "PM":
                 return msg.content

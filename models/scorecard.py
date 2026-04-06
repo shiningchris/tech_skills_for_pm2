@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
@@ -24,7 +27,7 @@ class Scorecard:
 
     overall_score: float = 0.0
     go_no_go: str = "NO-GO"  # "GO" | "NO-GO" | "CONDITIONAL GO"
-    go_condition: str | None = None
+    go_condition: Optional[str] = None
     next_actions: list[str] = field(default_factory=list)
     debate_rounds_completed: int = 0
     consensus_reached: bool = False

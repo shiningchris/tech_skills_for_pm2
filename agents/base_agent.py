@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import List
 
 import anthropic
 
@@ -22,7 +25,7 @@ class BaseAgent(ABC):
 
     def respond(
         self,
-        conversation_history: list[dict],
+        conversation_history: List[dict],
         brief: ProductBrief,
         instruction: str,
         round_number: int,
