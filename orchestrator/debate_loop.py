@@ -210,16 +210,15 @@ class DebateOrchestrator:
             else:
                 raise ValueError(f"Could not parse scorecard JSON from PM response:\n{json_text}")
 
-        scores = data.get("scores", {})
-
+        # New compact schema: scores are flat top-level integers (e.g. data["market_size"] = 7)
         def dim(key: str, label: str) -> DimensionScore:
-            d = scores.get(key, {})
-            return DimensionScore(
-                dimension=label,
-                score=int(d.get("score", 5)),
-                rationale=d.get("rationale", ""),
-                risks=d.get("risks", []),
-            )
+            raw = data.get(key, 5)
+            # Handle both compact (int) and legacy nested ({"score": int, ...}) formats
+            if isinstance(raw, dict):
+                score = int(raw.get("score", 5))
+            else:
+                score = int(raw)
+            return DimensionScore(dimension=label, score=score, rationale="", risks=[])
 
         scorecard = Scorecard(
             market_size=dim("market_size", "Market Size"),
@@ -237,8 +236,10 @@ class DebateOrchestrator:
             consensus_reached=consensus,
         )
 
-        # Prefer the model's computed values; fall back to local computation
-        scorecard.overall_score = float(data.get("overall_score") or scorecard.compute_overall_score())
+        # Always compute weighted average locally — don't trust model arithmetic
+        scorecard.compute_overall_score()
+        # Use model's verdict if provided, otherwise derive from score
         scorecard.go_no_go = data.get("go_no_go") or scorecard.compute_verdict()
 
         return scorecard
+

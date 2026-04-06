@@ -1,26 +1,20 @@
 from agents.base_agent import BaseAgent
 
-SCORECARD_SCHEMA = """
-{
-  "scores": {
-    "market_size":              { "score": <1-10>, "rationale": "<one sentence>", "risks": ["<risk>", "..."] },
-    "icp_clarity":              { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "gtm_viability":            { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "technical_feasibility":    { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "build_complexity":         { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "ux_viability":             { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "user_journey_clarity":     { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "competitive_moat":         { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] },
-    "revenue_model_strength":   { "score": <1-10>, "rationale": "<one sentence>", "risks": ["..."] }
-  },
-  "overall_score": <float>,
-  "go_no_go": "<GO|NO-GO|CONDITIONAL GO>",
-  "go_condition": "<string or null>",
-  "next_actions": ["<action 1>", "...", "<up to 7 actions>"],
-  "debate_rounds_completed": <int>,
-  "consensus_reached": <true|false>
-}
-"""
+# Minimal schema — scores only, no rationale/risks arrays that balloon token count
+COMPACT_SCHEMA = """{
+  "market_size": <1-10>,
+  "icp_clarity": <1-10>,
+  "gtm_viability": <1-10>,
+  "technical_feasibility": <1-10>,
+  "build_complexity": <1-10>,
+  "ux_viability": <1-10>,
+  "user_journey_clarity": <1-10>,
+  "competitive_moat": <1-10>,
+  "revenue_model_strength": <1-10>,
+  "go_no_go": "GO or NO-GO or CONDITIONAL GO",
+  "go_condition": "one sentence, or null",
+  "next_actions": ["action 1", "action 2", "action 3", "action 4", "action 5"]
+}"""
 
 
 class PMAgent(BaseAgent):
@@ -43,24 +37,18 @@ class PMAgent(BaseAgent):
             "<Points the team converged on>\n\n"
             "[UNRESOLVED DISAGREEMENTS]\n"
             "<The 1-2 most important open conflicts to resolve in the next round>\n\n"
-            "For the final synthesis, you will be given explicit JSON schema instructions "
-            "and must output ONLY valid JSON — no markdown, no commentary."
+            "For the final synthesis, output ONLY valid JSON — no markdown, no commentary."
         )
 
     def build_synthesis_prompt(self, rounds_completed: int, consensus: bool) -> str:
         return (
-            f"The debate is complete ({rounds_completed} rounds, "
-            f"consensus_reached={consensus}). "
-            "Based on everything the team discussed, produce the final validation scorecard. "
-            "Output ONLY valid JSON — no markdown fences, no commentary before or after. "
-            f"Use exactly this schema:\n{SCORECARD_SCHEMA}\n\n"
-            "Scoring notes:\n"
-            "- build_complexity: score HIGH (8-10) if the build is SIMPLE/fast, LOW (1-3) if complex\n"
-            "- overall_score: compute as the weighted average using these weights: "
-            "market_size=0.20, technical_feasibility=0.20, icp_clarity=0.10, "
-            "gtm_viability=0.10, build_complexity=0.10, ux_viability=0.10, "
-            "competitive_moat=0.10, user_journey_clarity=0.05, revenue_model_strength=0.05\n"
-            "- go_no_go: 'GO' if overall>=7.0, 'CONDITIONAL GO' if 5.0-6.9, 'NO-GO' if <5.0\n"
-            "- go_condition: required string if CONDITIONAL GO, null otherwise\n"
-            "- next_actions: 3-7 concrete, ordered actions the PM should take next"
+            f"Debate complete ({rounds_completed} rounds). "
+            "Output ONLY valid JSON, no markdown, no text before or after. "
+            f"Use this exact schema:\n{COMPACT_SCHEMA}\n\n"
+            "Rules:\n"
+            "- All scores are integers 1-10\n"
+            "- build_complexity: 8-10 = simple/fast build, 1-3 = complex/slow\n"
+            "- go_no_go: 'GO' if weighted avg >= 7.0, 'CONDITIONAL GO' if 5.0-6.9, 'NO-GO' if < 5.0\n"
+            "- go_condition: required if CONDITIONAL GO, otherwise null\n"
+            "- next_actions: exactly 5 concrete next steps"
         )
