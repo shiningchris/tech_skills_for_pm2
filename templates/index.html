@@ -619,6 +619,9 @@
           const next = nextAgent(data.agent);
           setWaiting(next ? next + ' is thinking…' : 'PM is summarizing…');
         }
+        if (data.type === 'status') {
+          setWaiting(data.message);
+        }
         if (data.type === 'scorecard') {
           hideWaiting();
           renderScorecard(data.data);

@@ -74,18 +74,25 @@ def stream(sprint_id: str):
         return jsonify({"error": "Unknown sprint_id"}), 404
 
     def generate():
-        while True:
+        total_waited = 0
+        max_wait = 360  # 6 min hard cap
+        while total_waited < max_wait:
             try:
-                event = q.get(timeout=120)  # 2 min timeout per event
+                event = q.get(timeout=15)
             except queue.Empty:
-                yield _sse({"type": "error", "message": "Debate timed out"})
-                break
+                total_waited += 15
+                # Keepalive comment — prevents browser/proxy from closing idle SSE connection
+                yield ": keepalive\n\n"
+                continue
 
+            total_waited = 0  # reset on activity
             yield _sse(event)
 
             if event.get("type") in ("done", "error"):
                 sprints.pop(sprint_id, None)
                 break
+        else:
+            yield _sse({"type": "error", "message": "Sprint timed out after 6 minutes"})
 
     return Response(
         generate(),
@@ -114,6 +121,9 @@ def _run_debate(sprint_id: str, brief: ProductBrief, api_key: str, q: queue.Queu
         current_round = [0]
 
         def on_message(agent_name: str, content: str, round_num: int) -> None:
+            if agent_name == "__status__":
+                q.put({"type": "status", "message": content})
+                return
             if round_num != current_round[0]:
                 current_round[0] = round_num
                 q.put({"type": "round_start", "round": round_num})

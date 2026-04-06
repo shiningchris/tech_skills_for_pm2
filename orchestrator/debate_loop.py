@@ -178,6 +178,8 @@ class DebateOrchestrator:
         return hits >= self.config.CONSENSUS_MIN_SIGNALS
 
     def _synthesize(self, brief: ProductBrief, rounds_completed: int, consensus: bool) -> Scorecard:
+        # Notify UI that synthesis is starting (debate messages are done, scorecard coming)
+        self.on_message("__status__", "Generating final scorecard…", rounds_completed)
         synthesis_prompt = self.pm.build_synthesis_prompt(rounds_completed, consensus)
         self.bus.add_orchestrator_prompt(synthesis_prompt)
         pm_msg = self.pm.respond(
@@ -185,7 +187,7 @@ class DebateOrchestrator:
             brief=brief,
             instruction=synthesis_prompt,
             round_number=rounds_completed,
-            max_tokens=2048,  # scorecard JSON needs more room than regular responses
+            max_tokens=4096,  # scorecard JSON needs more room than regular responses
         )
         self.bus.add_agent_response(pm_msg)
         return self._parse_scorecard(pm_msg.content, rounds_completed, consensus)
