@@ -721,6 +721,8 @@
 
     function renderLeanCanvas(lc) {
       const section = document.getElementById('scorecard-section');
+      // Skip rendering if all fields are empty (parse failed server-side)
+      if (!lc || !Object.values(lc).some(v => v && String(v).trim())) return;
       const cells = [
         {key: 'early_adopter',    label: 'Early Adopter',          highlight: true},
         {key: 'problem',          label: 'Problem',                 highlight: false},
