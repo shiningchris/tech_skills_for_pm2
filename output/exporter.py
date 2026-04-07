@@ -39,7 +39,9 @@ class Exporter:
                 "overall_score": scorecard.overall_score,
                 "go_no_go": scorecard.go_no_go,
                 "go_condition": scorecard.go_condition,
-                "next_actions": scorecard.next_actions,
+                "next_actions": [
+                    {"action": a.action, "owner": a.owner} for a in scorecard.next_actions
+                ],
                 "debate_rounds_completed": scorecard.debate_rounds_completed,
                 "consensus_reached": scorecard.consensus_reached,
             },
@@ -80,7 +82,7 @@ class Exporter:
 
         lines.append("\n## Next Actions\n")
         for i, action in enumerate(scorecard.next_actions, 1):
-            lines.append(f"{i}. {action}")
+            lines.append(f"{i}. [{action.owner}] {action.action}")
 
         lines.append("\n## Debate Transcript\n")
         for round_num in range(1, scorecard.debate_rounds_completed + 1):

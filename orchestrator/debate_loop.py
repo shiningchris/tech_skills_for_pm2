@@ -6,7 +6,7 @@ from agents.tech_agent import TechAgent
 from agents.design_agent import DesignAgent
 from config import Config
 from models.brief import ProductBrief
-from models.scorecard import DimensionScore, Scorecard
+from models.scorecard import DimensionScore, LeanCanvas, NextAction, Scorecard
 from orchestrator.message_bus import MessageBus
 
 
@@ -44,7 +44,9 @@ class DebateOrchestrator:
                 consensus = True
                 break
 
-        return self._synthesize(brief, rounds_completed, consensus)
+        scorecard = self._synthesize(brief, rounds_completed, consensus)
+        scorecard.lean_canvas = self._synthesize_lean_canvas(brief, rounds_completed)
+        return scorecard
 
     # ------------------------------------------------------------------ #
     # Private helpers                                                      #
@@ -178,8 +180,7 @@ class DebateOrchestrator:
         return hits >= self.config.CONSENSUS_MIN_SIGNALS
 
     def _synthesize(self, brief: ProductBrief, rounds_completed: int, consensus: bool) -> Scorecard:
-        # Notify UI that synthesis is starting (debate messages are done, scorecard coming)
-        self.on_message("__status__", "Generating final scorecard…", rounds_completed)
+        self.on_message("__status__", "Generating scorecard…", rounds_completed)
         synthesis_prompt = self.pm.build_synthesis_prompt(rounds_completed, consensus)
         self.bus.add_orchestrator_prompt(synthesis_prompt)
         pm_msg = self.pm.respond(
@@ -187,38 +188,47 @@ class DebateOrchestrator:
             brief=brief,
             instruction=synthesis_prompt,
             round_number=rounds_completed,
-            max_tokens=4096,  # scorecard JSON needs more room than regular responses
+            max_tokens=1024,
         )
         self.bus.add_agent_response(pm_msg)
         return self._parse_scorecard(pm_msg.content, rounds_completed, consensus)
 
+    def _synthesize_lean_canvas(self, brief: ProductBrief, rounds_completed: int) -> LeanCanvas:
+        self.on_message("__status__", "Building Lean Canvas…", rounds_completed)
+        canvas_prompt = self.pm.build_lean_canvas_prompt()
+        self.bus.add_orchestrator_prompt(canvas_prompt)
+        pm_msg = self.pm.respond(
+            conversation_history=self.bus.get_history(),
+            brief=brief,
+            instruction=canvas_prompt,
+            round_number=rounds_completed,
+            max_tokens=1024,
+        )
+        self.bus.add_agent_response(pm_msg)
+        return self._parse_lean_canvas(pm_msg.content)
+
     def _parse_scorecard(self, json_text: str, rounds_completed: int, consensus: bool) -> Scorecard:
-        # Strip markdown fences if present
-        text = json_text.strip()
-        if text.startswith("```"):
-            lines = text.split("\n")
-            text = "\n".join(lines[1:-1]) if lines[-1] == "```" else "\n".join(lines[1:])
+        data = self._extract_json(json_text)
 
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            # Try to find JSON object within text
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            if start != -1 and end > start:
-                data = json.loads(text[start:end])
-            else:
-                raise ValueError(f"Could not parse scorecard JSON from PM response:\n{json_text}")
-
-        # New compact schema: scores are flat top-level integers (e.g. data["market_size"] = 7)
         def dim(key: str, label: str) -> DimensionScore:
             raw = data.get(key, 5)
-            # Handle both compact (int) and legacy nested ({"score": int, ...}) formats
             if isinstance(raw, dict):
                 score = int(raw.get("score", 5))
             else:
                 score = int(raw)
             return DimensionScore(dimension=label, score=score, rationale="", risks=[])
+
+        # Parse next_actions — support both old (list of str) and new (list of {action, owner})
+        raw_actions = data.get("next_actions", [])
+        next_actions = []
+        for item in raw_actions:
+            if isinstance(item, dict):
+                next_actions.append(NextAction(
+                    action=item.get("action", ""),
+                    owner=item.get("owner", "PM"),
+                ))
+            else:
+                next_actions.append(NextAction(action=str(item), owner="PM"))
 
         scorecard = Scorecard(
             market_size=dim("market_size", "Market Size"),
@@ -230,16 +240,44 @@ class DebateOrchestrator:
             user_journey_clarity=dim("user_journey_clarity", "User Journey Clarity"),
             competitive_moat=dim("competitive_moat", "Competitive Moat"),
             revenue_model_strength=dim("revenue_model_strength", "Revenue Model Strength"),
-            next_actions=data.get("next_actions", []),
+            next_actions=next_actions,
             go_condition=data.get("go_condition"),
             debate_rounds_completed=rounds_completed,
             consensus_reached=consensus,
         )
 
-        # Always compute weighted average locally — don't trust model arithmetic
         scorecard.compute_overall_score()
-        # Use model's verdict if provided, otherwise derive from score
         scorecard.go_no_go = data.get("go_no_go") or scorecard.compute_verdict()
-
         return scorecard
 
+    def _parse_lean_canvas(self, json_text: str) -> LeanCanvas:
+        try:
+            data = self._extract_json(json_text)
+            return LeanCanvas(
+                problem=data.get("problem", ""),
+                customer_segments=data.get("customer_segments", ""),
+                early_adopter=data.get("early_adopter", ""),
+                unique_value_prop=data.get("unique_value_prop", ""),
+                solution=data.get("solution", ""),
+                channels=data.get("channels", ""),
+                revenue_streams=data.get("revenue_streams", ""),
+                cost_structure=data.get("cost_structure", ""),
+                key_metrics=data.get("key_metrics", ""),
+                unfair_advantage=data.get("unfair_advantage", ""),
+            )
+        except Exception:
+            return LeanCanvas()  # return empty canvas rather than crashing
+
+    def _extract_json(self, text: str) -> dict:
+        text = text.strip()
+        if text.startswith("```"):
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else "\n".join(lines[1:])
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            start = text.find("{")
+            end = text.rfind("}") + 1
+            if start != -1 and end > start:
+                return json.loads(text[start:end])
+            raise ValueError(f"Could not parse JSON:\n{text[:200]}")

@@ -1,3 +1,3 @@
 from .brief import ProductBrief
 from .message import AgentMessage
-from .scorecard import DimensionScore, Scorecard
+from .scorecard import DimensionScore, LeanCanvas, NextAction, Scorecard

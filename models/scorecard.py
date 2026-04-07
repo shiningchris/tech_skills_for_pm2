@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
 
 @dataclass
@@ -9,7 +9,27 @@ class DimensionScore:
     dimension: str
     score: int  # 1-10
     rationale: str
-    risks: list[str] = field(default_factory=list)
+    risks: List[str] = field(default_factory=list)
+
+
+@dataclass
+class NextAction:
+    action: str
+    owner: str  # "PM" | "Marketer" | "Tech Co-founder" | "Design Co-founder"
+
+
+@dataclass
+class LeanCanvas:
+    problem: str = ""
+    customer_segments: str = ""
+    early_adopter: str = ""
+    unique_value_prop: str = ""
+    solution: str = ""
+    channels: str = ""
+    revenue_streams: str = ""
+    cost_structure: str = ""
+    key_metrics: str = ""
+    unfair_advantage: str = ""
 
 
 @dataclass
@@ -28,7 +48,8 @@ class Scorecard:
     overall_score: float = 0.0
     go_no_go: str = "NO-GO"  # "GO" | "NO-GO" | "CONDITIONAL GO"
     go_condition: Optional[str] = None
-    next_actions: list[str] = field(default_factory=list)
+    next_actions: List[NextAction] = field(default_factory=list)
+    lean_canvas: Optional[LeanCanvas] = None
     debate_rounds_completed: int = 0
     consensus_reached: bool = False
 

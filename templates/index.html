@@ -16,8 +16,10 @@
       --indigo: #6366F1;
       --indigo-light: #EEF2FF;
       --amber: #F59E0B;
+      --amber-light: #FFFBEB;
       --pink: #EC4899;
       --emerald: #10B981;
+      --emerald-light: #ECFDF5;
       --radius: 14px;
       --radius-sm: 8px;
     }
@@ -31,43 +33,28 @@
 
     /* ── NAV ─────────────────────────────── */
     nav {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      display: flex;
-      align-items: center;
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center;
       padding: 16px 32px;
-      background: rgba(250,250,250,0.85);
+      background: rgba(250,250,250,0.88);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
     }
     .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 15px;
-      letter-spacing: -0.3px;
-      color: var(--text);
-      text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+      color: var(--text); text-decoration: none;
     }
     .nav-icon {
-      width: 30px; height: 30px;
-      background: var(--indigo);
-      border-radius: 8px;
-      display: grid; place-items: center;
-      color: white;
-      font-size: 14px;
+      width: 30px; height: 30px; background: var(--indigo);
+      border-radius: 8px; display: grid; place-items: center;
+      color: white; font-size: 14px;
     }
     .nav-pill {
       margin-left: auto;
-      background: var(--indigo-light);
-      color: var(--indigo);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 99px;
-      letter-spacing: 0.3px;
+      background: var(--indigo-light); color: var(--indigo);
+      font-size: 12px; font-weight: 600; padding: 5px 12px;
+      border-radius: 99px; letter-spacing: 0.3px;
     }
 
     /* ── VIEWS ───────────────────────────── */
@@ -75,207 +62,163 @@
     .view.active { display: block; }
 
     /* ── FORM VIEW ───────────────────────── */
-    #view-form {
-      max-width: 680px;
+    #view-form-inner {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 40px;
+      max-width: 1000px;
       margin: 0 auto;
-      padding: 80px 24px 120px;
+      padding: 64px 24px 120px;
     }
+    @media (max-width: 760px) {
+      #view-form-inner { grid-template-columns: 1fr; }
+    }
+
     .hero-label {
-      display: inline-block;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--indigo);
-      margin-bottom: 20px;
+      display: inline-block; font-size: 12px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--indigo); margin-bottom: 20px;
     }
     .hero-title {
-      font-size: clamp(42px, 6vw, 72px);
-      font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -2px;
-      color: var(--text);
-      margin-bottom: 20px;
+      font-size: clamp(36px, 5vw, 60px); font-weight: 800;
+      line-height: 1.05; letter-spacing: -2px;
+      color: var(--text); margin-bottom: 16px;
     }
     .hero-sub {
-      font-size: 18px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 52px;
-      max-width: 480px;
+      font-size: 16px; color: var(--muted); line-height: 1.6;
+      margin-bottom: 40px; max-width: 480px;
     }
 
     .form-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 36px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px;
     }
-
-    .field { margin-bottom: 24px; }
+    .field { margin-bottom: 20px; }
     .field label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 8px;
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--text); margin-bottom: 7px;
     }
-    .field label span {
-      color: var(--indigo);
-      margin-left: 2px;
-    }
+    .field label span { color: var(--indigo); margin-left: 2px; }
     .field input, .field textarea, .field select {
-      width: 100%;
-      padding: 11px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      color: var(--text);
-      background: var(--bg);
+      width: 100%; padding: 10px 13px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; color: var(--text); background: var(--bg);
       transition: border-color 0.15s, box-shadow 0.15s;
-      font-family: inherit;
-      resize: vertical;
-      outline: none;
+      font-family: inherit; resize: vertical; outline: none;
     }
-    .field input::placeholder,
-    .field textarea::placeholder { color: #9CA3AF; }
-    .field input:focus,
-    .field textarea:focus,
-    .field select:focus {
-      border-color: var(--indigo);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    .field input::placeholder, .field textarea::placeholder { color: #9CA3AF; }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
     }
-    .field textarea { min-height: 80px; }
-    .field select { cursor: pointer; }
-
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field textarea { min-height: 76px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     @media (max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
 
     .form-footer {
-      margin-top: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
+      margin-top: 28px; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 12px;
     }
-    .form-note {
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .form-note { font-size: 12px; color: var(--muted); }
     .btn-primary {
-      background: var(--indigo);
-      color: white;
-      border: none;
-      padding: 13px 28px;
-      border-radius: 99px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
+      background: var(--indigo); color: white; border: none;
+      padding: 12px 26px; border-radius: 99px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
       transition: opacity 0.15s, transform 0.1s;
-      letter-spacing: -0.2px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: flex; align-items: center; gap: 8px;
     }
     .btn-primary:hover { opacity: 0.88; }
     .btn-primary:active { transform: scale(0.98); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* ── DEBATE VIEW ─────────────────────── */
-    #view-debate {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 48px 24px 120px;
+    /* ── HISTORY PANEL ───────────────────── */
+    .history-panel h3 {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
     }
+    .history-empty {
+      font-size: 13px; color: var(--muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      text-align: center; line-height: 1.5;
+    }
+    .history-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      margin-bottom: 10px; cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .history-card:hover {
+      border-color: var(--indigo); box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+    }
+    .history-card-title {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      margin-bottom: 8px; line-height: 1.3;
+    }
+    .history-card-meta {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .verdict-chip {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .verdict-chip.go      { background: #DCFCE7; color: #15803D; }
+    .verdict-chip.conditional { background: #FEF9C3; color: #92400E; }
+    .verdict-chip.nogo    { background: #FEE2E2; color: #B91C1C; }
+    .history-score {
+      font-size: 12px; color: var(--muted); font-weight: 500;
+    }
+    .history-date { font-size: 11px; color: #9CA3AF; margin-top: 4px; }
 
-    .sprint-title {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 36px;
+    /* ── DEBATE VIEW ─────────────────────── */
+    #view-debate > div {
+      max-width: 760px; margin: 0 auto; padding: 48px 24px 120px;
     }
+    .sprint-title { font-size: 13px; color: var(--muted); margin-bottom: 36px; }
     .sprint-title strong { color: var(--text); }
 
     .round-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
+      display: flex; align-items: center; gap: 14px;
       margin: 36px 0 20px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted);
     }
     .round-header::before, .round-header::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
+      content: ''; flex: 1; height: 1px; background: var(--border);
     }
 
     .agent-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 22px;
-      margin-bottom: 14px;
-      border-left-width: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 22px;
+      margin-bottom: 14px; border-left-width: 4px;
       animation: slideIn 0.25s ease;
     }
     @keyframes slideIn {
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .agent-card[data-agent="Marketer"]         { border-left-color: var(--indigo); }
-    .agent-card[data-agent="Tech Co-founder"]  { border-left-color: var(--amber); }
-    .agent-card[data-agent="Design Co-founder"]{ border-left-color: var(--pink); }
-    .agent-card[data-agent="PM"]               { border-left-color: var(--emerald); }
+    .agent-card[data-agent="Marketer"]          { border-left-color: var(--indigo); }
+    .agent-card[data-agent="Tech Co-founder"]   { border-left-color: var(--amber); }
+    .agent-card[data-agent="Design Co-founder"] { border-left-color: var(--pink); }
+    .agent-card[data-agent="PM"]                { border-left-color: var(--emerald); }
 
     .agent-name {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 12px;
     }
     .agent-card[data-agent="Marketer"]          .agent-name { color: var(--indigo); }
     .agent-card[data-agent="Tech Co-founder"]   .agent-name { color: var(--amber); }
     .agent-card[data-agent="Design Co-founder"] .agent-name { color: var(--pink); }
     .agent-card[data-agent="PM"]                .agent-name { color: var(--emerald); }
 
-    .agent-body {
-      font-size: 14px;
-      line-height: 1.7;
-      color: #374151;
-      white-space: pre-wrap;
-    }
-
-    /* Section headers within agent body */
-    .agent-body .section-tag {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-top: 14px;
-      margin-bottom: 4px;
-    }
+    .agent-body { font-size: 14px; line-height: 1.7; color: #374151; white-space: pre-wrap; }
 
     .waiting-indicator {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13px;
-      color: var(--muted);
-      padding: 16px 0;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--muted); padding: 16px 0;
     }
     .dot-pulse {
-      width: 8px; height: 8px;
-      background: var(--indigo);
-      border-radius: 50%;
-      animation: pulse 1.2s ease-in-out infinite;
+      width: 8px; height: 8px; background: var(--indigo);
+      border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 0.3; transform: scale(0.85); }
@@ -283,187 +226,130 @@
     }
 
     /* ── SCORECARD ───────────────────────── */
-    .scorecard-section {
-      margin-top: 52px;
-      animation: slideIn 0.3s ease;
+    .section-divider {
+      display: flex; align-items: center; gap: 14px;
+      margin: 52px 0 28px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted);
     }
-    .scorecard-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 28px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .scorecard-header::before, .scorecard-header::after {
+    .section-divider::before, .section-divider::after {
       content: ''; flex: 1; height: 1px; background: var(--border);
     }
 
     .verdict-badge {
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin-bottom: 28px;
+      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 28px;
     }
-    .verdict-badge.go      { background: #DCFCE7; border: 1px solid #BBF7D0; }
+    .verdict-badge.go          { background: #DCFCE7; border: 1px solid #BBF7D0; }
     .verdict-badge.conditional { background: #FEF9C3; border: 1px solid #FDE68A; }
-    .verdict-badge.nogo    { background: #FEE2E2; border: 1px solid #FECACA; }
+    .verdict-badge.nogo        { background: #FEE2E2; border: 1px solid #FECACA; }
 
     .verdict-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 6px;
     }
-    .verdict-badge.go      .verdict-label { color: #15803D; }
+    .verdict-badge.go          .verdict-label { color: #15803D; }
     .verdict-badge.conditional .verdict-label { color: #92400E; }
-    .verdict-badge.nogo    .verdict-label { color: #B91C1C; }
-
-    .verdict-value {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
-    .verdict-badge.go      .verdict-value { color: #166534; }
+    .verdict-badge.nogo        .verdict-label { color: #B91C1C; }
+    .verdict-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .verdict-badge.go          .verdict-value { color: #166534; }
     .verdict-badge.conditional .verdict-value { color: #78350F; }
-    .verdict-badge.nogo    .verdict-value { color: #991B1B; }
-
-    .verdict-condition {
-      font-size: 13px;
-      color: #6B7280;
-      margin-top: 8px;
-    }
+    .verdict-badge.nogo        .verdict-value { color: #991B1B; }
+    .verdict-condition { font-size: 13px; color: #6B7280; margin-top: 8px; }
 
     .score-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 28px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
+      width: 100%; border-collapse: collapse; margin-bottom: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
     }
     .score-table th {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 12px 16px;
-      text-align: left;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+      text-transform: uppercase; color: var(--muted);
+      padding: 12px 16px; text-align: left;
+      background: var(--bg); border-bottom: 1px solid var(--border);
     }
     .score-table td {
-      padding: 13px 16px;
-      font-size: 13px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
+      padding: 12px 16px; font-size: 13px;
+      border-bottom: 1px solid var(--border); vertical-align: middle;
     }
     .score-table tr:last-child td { border-bottom: none; }
     .score-table .dim-name { font-weight: 500; color: var(--text); }
-    .score-table .dim-score {
-      font-weight: 700;
-      font-size: 14px;
-      white-space: nowrap;
-      color: var(--text);
-      width: 56px;
-    }
+    .score-table .dim-score { font-weight: 700; font-size: 14px; white-space: nowrap; width: 56px; }
     .score-table .dim-bar { width: 110px; }
-    .score-table .dim-rationale { color: var(--muted); font-size: 12px; }
-
-    .score-bar-track {
-      height: 6px;
-      background: #F3F4F6;
-      border-radius: 99px;
-      overflow: hidden;
-      width: 100%;
-    }
-    .score-bar-fill {
-      height: 100%;
-      border-radius: 99px;
-      background: var(--indigo);
-      transition: width 0.6s ease;
-    }
+    .score-bar-track { height: 6px; background: #F3F4F6; border-radius: 99px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 99px; background: var(--indigo); transition: width 0.6s ease; }
 
     .overall-row {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      padding: 20px 0 8px;
-      border-top: 2px solid var(--border);
-      margin-top: 4px;
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 18px 0 8px; border-top: 2px solid var(--border);
     }
-    .overall-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
-    }
-    .overall-value {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text);
-    }
-    .overall-denom {
-      font-size: 16px;
-      color: var(--muted);
-      font-weight: 500;
-    }
+    .overall-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .overall-value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+    .overall-denom { font-size: 16px; color: var(--muted); font-weight: 500; }
 
-    .next-actions h3 {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
+    /* ── NEXT ACTIONS ────────────────────── */
+    .actions-list { margin-top: 8px; }
     .action-item {
-      display: flex;
-      gap: 14px;
-      padding: 14px 0;
-      border-bottom: 1px solid var(--border);
-      align-items: flex-start;
+      display: flex; gap: 14px; padding: 14px 0;
+      border-bottom: 1px solid var(--border); align-items: flex-start;
     }
     .action-item:last-child { border-bottom: none; }
     .action-num {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--indigo);
-      background: var(--indigo-light);
-      border-radius: 6px;
-      padding: 2px 8px;
-      flex-shrink: 0;
-      margin-top: 1px;
+      font-size: 12px; font-weight: 700; color: var(--indigo);
+      background: var(--indigo-light); border-radius: 6px;
+      padding: 2px 8px; flex-shrink: 0; margin-top: 1px;
     }
+    .action-content { flex: 1; }
     .action-text { font-size: 14px; line-height: 1.5; color: #374151; }
+    .owner-badge {
+      display: inline-block; margin-top: 6px;
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .owner-pm      { background: var(--emerald-light); color: #065F46; }
+    .owner-marketer { background: var(--indigo-light); color: #3730A3; }
+    .owner-tech    { background: var(--amber-light); color: #78350F; }
+    .owner-design  { background: #FDF2F8; color: #831843; }
+
+    /* ── LEAN CANVAS ─────────────────────── */
+    .lean-canvas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+    @media (max-width: 600px) { .lean-canvas-grid { grid-template-columns: 1fr; } }
+
+    .canvas-cell {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 16px;
+      animation: slideIn 0.3s ease;
+    }
+    .canvas-cell.highlight {
+      border-color: var(--indigo); background: var(--indigo-light);
+    }
+    .canvas-cell-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    }
+    .canvas-cell.highlight .canvas-cell-label { color: var(--indigo); }
+    .canvas-cell-value { font-size: 13px; line-height: 1.6; color: #374151; }
+    .canvas-cell.highlight .canvas-cell-value { color: var(--text); }
 
     .error-card {
-      background: #FEE2E2;
-      border: 1px solid #FECACA;
-      border-radius: var(--radius);
-      padding: 20px;
-      color: #991B1B;
-      font-size: 14px;
-      margin-top: 20px;
+      background: #FEE2E2; border: 1px solid #FECACA;
+      border-radius: var(--radius); padding: 20px;
+      color: #991B1B; font-size: 14px; margin-top: 20px;
     }
 
     .meta-row {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 32px;
-      padding-top: 20px;
+      font-size: 12px; color: var(--muted);
+      margin-top: 32px; padding-top: 20px;
       border-top: 1px solid var(--border);
     }
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
   <nav>
     <a class="nav-logo" href="/" onclick="resetToForm(event)">
       <div class="nav-icon">◈</div>
@@ -474,83 +360,86 @@
 
   <!-- ── VIEW: FORM ──────────────────────── -->
   <div id="view-form" class="view active">
-    <div id="view-form-inner" style="max-width:680px;margin:0 auto;padding:80px 24px 120px;">
-      <span class="hero-label">Product Validation</span>
-      <h1 class="hero-title">Validate your<br>product idea.</h1>
-      <p class="hero-sub">Three AI co-founders — a Marketer, a Tech lead, and a Designer — debate your idea across multiple rounds and deliver a Go / No-Go verdict.</p>
+    <div id="view-form-inner">
+      <!-- Left: hero + form -->
+      <div>
+        <span class="hero-label">Product Validation</span>
+        <h1 class="hero-title">Validate your<br>product idea.</h1>
+        <p class="hero-sub">Three AI co-founders — a Marketer, a Tech lead, and a Designer — debate your idea and deliver a Go / No-Go verdict with a Lean Canvas.</p>
 
-      <div class="form-card">
-        <form id="brief-form" onsubmit="handleSubmit(event)">
-
-          <div class="field">
-            <label>Idea title <span>*</span></label>
-            <input type="text" name="idea_title" required
-              placeholder="e.g. AI expense tracker for solopreneurs" />
-          </div>
-
-          <div class="field">
-            <label>What problem does it solve? <span>*</span></label>
-            <textarea name="problem_statement" required
-              placeholder="e.g. Solopreneurs waste hours manually tracking expenses for tax season"></textarea>
-          </div>
-
-          <div class="field">
-            <label>What does the product do? <span>*</span></label>
-            <textarea name="proposed_solution" required
-              placeholder="e.g. Snap a receipt photo; AI categorizes it and exports a tax report"></textarea>
-          </div>
-
-          <div class="field">
-            <label>Who is the primary user? <span>*</span></label>
-            <textarea name="target_user" required
-              placeholder="e.g. US freelancers earning $50k–$200k/year"></textarea>
-          </div>
-
-          <div class="field-row">
+        <div class="form-card">
+          <form id="brief-form" onsubmit="handleSubmit(event)">
             <div class="field">
-              <label>Revenue model <span>*</span></label>
-              <textarea name="revenue_model" required style="min-height:72px"
-                placeholder="e.g. Freemium + $12/month Pro tier"></textarea>
+              <label>Idea title <span>*</span></label>
+              <input type="text" name="idea_title" required
+                placeholder="e.g. AI expense tracker for solopreneurs" />
             </div>
             <div class="field">
-              <label>Known competitors</label>
-              <textarea name="known_competitors" style="min-height:72px"
-                placeholder="e.g. Expensify, Wave, spreadsheets"></textarea>
+              <label>What problem does it solve? <span>*</span></label>
+              <textarea name="problem_statement" required
+                placeholder="e.g. Solopreneurs waste hours manually tracking expenses for tax season"></textarea>
             </div>
-          </div>
+            <div class="field">
+              <label>What does the product do? <span>*</span></label>
+              <textarea name="proposed_solution" required
+                placeholder="e.g. Snap a receipt photo; AI categorizes it and exports a tax report"></textarea>
+            </div>
+            <div class="field">
+              <label>Who is the primary user? <span>*</span></label>
+              <textarea name="target_user" required
+                placeholder="e.g. US freelancers earning $50k–$200k/year"></textarea>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Revenue model <span>*</span></label>
+                <textarea name="revenue_model" required style="min-height:72px"
+                  placeholder="e.g. Freemium + $12/month Pro"></textarea>
+              </div>
+              <div class="field">
+                <label>Known competitors</label>
+                <textarea name="known_competitors" style="min-height:72px"
+                  placeholder="e.g. Expensify, Wave"></textarea>
+              </div>
+            </div>
+            <div class="field" style="max-width:180px">
+              <label>Stage <span>*</span></label>
+              <select name="stage" required>
+                <option value="idea">Idea</option>
+                <option value="prototype">Prototype</option>
+                <option value="mvp">MVP</option>
+                <option value="live">Live</option>
+              </select>
+            </div>
+            <div class="form-footer">
+              <span class="form-note">~90s · claude-sonnet-4-6</span>
+              <button type="submit" class="btn-primary" id="submit-btn">
+                Start Validation Sprint →
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
-          <div class="field" style="max-width:200px">
-            <label>Current stage <span>*</span></label>
-            <select name="stage" required>
-              <option value="idea">Idea</option>
-              <option value="prototype">Prototype</option>
-              <option value="mvp">MVP</option>
-              <option value="live">Live</option>
-            </select>
-          </div>
-
-          <div class="form-footer">
-            <span class="form-note">~60–90 seconds · uses Claude claude-sonnet-4-6</span>
-            <button type="submit" class="btn-primary" id="submit-btn">
-              Start Validation Sprint
-              <span>→</span>
-            </button>
-          </div>
-        </form>
+      <!-- Right: history panel -->
+      <div class="history-panel">
+        <h3>Recent Sprints</h3>
+        <div id="history-list">
+          <div class="history-empty">No sprints yet.<br>Run your first validation above.</div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ── VIEW: DEBATE ────────────────────── -->
   <div id="view-debate" class="view">
-    <div style="max-width:760px;margin:0 auto;padding:48px 24px 120px;">
+    <div>
       <p class="sprint-title">Validating: <strong id="debate-title"></strong></p>
       <div id="debate-feed"></div>
       <div id="waiting-indicator" class="waiting-indicator" style="display:none;">
         <div class="dot-pulse"></div>
-        <span id="waiting-text">Waiting…</span>
+        <span id="waiting-text">Starting…</span>
       </div>
-      <div id="scorecard-section" class="scorecard-section" style="display:none;"></div>
+      <div id="scorecard-section" style="display:none;"></div>
     </div>
   </div>
 
@@ -569,13 +458,48 @@
       document.getElementById('scorecard-section').style.display = 'none';
       document.getElementById('submit-btn').disabled = false;
       document.getElementById('submit-btn').textContent = 'Start Validation Sprint →';
+      loadHistory();
+    }
+
+    // ── History ──────────────────────────────
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history');
+        const items = await res.json();
+        const el = document.getElementById('history-list');
+        if (!items.length) {
+          el.innerHTML = '<div class="history-empty">No sprints yet.<br>Run your first validation above.</div>';
+          return;
+        }
+        el.innerHTML = items.map(item => {
+          const cls = item.go_no_go === 'GO' ? 'go' : item.go_no_go === 'NO-GO' ? 'nogo' : 'conditional';
+          const date = item.exported_at ? new Date(item.exported_at).toLocaleDateString() : '';
+          return `<div class="history-card" onclick="loadHistorySprint(${JSON.stringify(JSON.stringify(item))})">
+            <div class="history-card-title">${item.idea_title}</div>
+            <div class="history-card-meta">
+              <span class="verdict-chip ${cls}">${item.go_no_go}</span>
+              <span class="history-score">${item.overall_score}/10</span>
+            </div>
+            <div class="history-date">${date}</div>
+          </div>`;
+        }).join('');
+      } catch (e) { /* silent */ }
+    }
+
+    function loadHistorySprint(itemJson) {
+      const item = JSON.parse(itemJson);
+      document.getElementById('debate-title').textContent = item.idea_title;
+      document.getElementById('debate-feed').innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">Loaded from history — full debate transcript saved in ./output/</p>';
+      document.getElementById('scorecard-section').innerHTML = '';
+      document.getElementById('scorecard-section').style.display = 'block';
+      showView('debate');
+      renderScorecard(item.scorecard);
     }
 
     // ── Form submit ──────────────────────────
     async function handleSubmit(e) {
       e.preventDefault();
-      const form = e.target;
-      const data = Object.fromEntries(new FormData(form));
+      const data = Object.fromEntries(new FormData(e.target));
 
       document.getElementById('submit-btn').disabled = true;
       document.getElementById('submit-btn').textContent = 'Starting…';
@@ -588,11 +512,11 @@
       try {
         const res = await fetch('/api/start', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(data),
         });
         if (!res.ok) throw new Error('Failed to start sprint');
-        const { sprint_id } = await res.json();
+        const {sprint_id} = await res.json();
         listenToStream(sprint_id);
       } catch (err) {
         renderError(err.message);
@@ -600,53 +524,27 @@
     }
 
     // ── SSE stream ───────────────────────────
-    let currentRound = 0;
-
     function listenToStream(sprintId) {
-      currentRound = 0;
-      const es = new EventSource('/api/stream/' + sprintId);
       setWaiting('Marketer is thinking…');
+      const es = new EventSource('/api/stream/' + sprintId);
 
       es.onmessage = (event) => {
         const data = JSON.parse(event.data);
-
-        if (data.type === 'round_start') {
-          renderRoundHeader(data.round);
-          setWaiting('Waiting for Marketer…');
-        }
-        if (data.type === 'message') {
-          renderAgentCard(data);
-          const next = nextAgent(data.agent);
-          setWaiting(next ? next + ' is thinking…' : 'PM is summarizing…');
-        }
-        if (data.type === 'status') {
-          setWaiting(data.message);
-        }
-        if (data.type === 'scorecard') {
-          hideWaiting();
-          renderScorecard(data.data);
-        }
-        if (data.type === 'done') {
-          hideWaiting();
-          es.close();
-        }
-        if (data.type === 'error') {
-          hideWaiting();
-          renderError(data.message);
-          es.close();
-        }
+        if (data.type === 'round_start')  { renderRoundHeader(data.round); setWaiting('Waiting for Marketer…'); }
+        if (data.type === 'message')      { renderAgentCard(data); setWaiting(nextAgent(data.agent) + ' is thinking…'); }
+        if (data.type === 'status')       { setWaiting(data.message); }
+        if (data.type === 'scorecard')    { hideWaiting(); renderScorecard(data.data); }
+        if (data.type === 'lean_canvas')  { renderLeanCanvas(data.data); }
+        if (data.type === 'done')         { hideWaiting(); es.close(); loadHistory(); }
+        if (data.type === 'error')        { hideWaiting(); renderError(data.message); es.close(); }
       };
-
-      es.onerror = () => {
-        hideWaiting();
-        es.close();
-      };
+      es.onerror = () => { hideWaiting(); es.close(); };
     }
 
     function nextAgent(current) {
       const order = ['Marketer', 'Tech Co-founder', 'Design Co-founder', 'PM'];
       const idx = order.indexOf(current);
-      return idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
+      return idx >= 0 && idx < order.length - 1 ? order[idx + 1] : 'PM';
     }
 
     // ── Renderers ────────────────────────────
@@ -657,30 +555,19 @@
       document.getElementById('debate-feed').appendChild(el);
     }
 
-    function renderAgentCard({ agent, content, round }) {
+    function renderAgentCard({agent, content}) {
       const card = document.createElement('div');
       card.className = 'agent-card';
       card.dataset.agent = agent;
-
-      const nameEl = document.createElement('div');
-      nameEl.className = 'agent-name';
-      nameEl.textContent = agent;
-
-      const bodyEl = document.createElement('div');
-      bodyEl.className = 'agent-body';
-      bodyEl.textContent = content;
-
-      card.appendChild(nameEl);
-      card.appendChild(bodyEl);
+      card.innerHTML = `<div class="agent-name">${agent}</div><div class="agent-body">${escHtml(content)}</div>`;
       document.getElementById('debate-feed').appendChild(card);
-      card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      card.scrollIntoView({behavior: 'smooth', block: 'end'});
     }
 
     function setWaiting(text) {
       document.getElementById('waiting-text').textContent = text;
       document.getElementById('waiting-indicator').style.display = 'flex';
     }
-
     function hideWaiting() {
       document.getElementById('waiting-indicator').style.display = 'none';
     }
@@ -696,48 +583,27 @@
       const section = document.getElementById('scorecard-section');
       section.style.display = 'block';
 
-      // Verdict
-      const verdictClass = sc.go_no_go === 'GO' ? 'go'
-                         : sc.go_no_go === 'NO-GO' ? 'nogo'
-                         : 'conditional';
-      const verdictIcon = sc.go_no_go === 'GO' ? '✦' : sc.go_no_go === 'NO-GO' ? '✗' : '◈';
+      const verdictClass = sc.go_no_go === 'GO' ? 'go' : sc.go_no_go === 'NO-GO' ? 'nogo' : 'conditional';
+      const verdictIcon  = sc.go_no_go === 'GO' ? '✦' : sc.go_no_go === 'NO-GO' ? '✗' : '◈';
 
-      let html = `
-        <div class="scorecard-header">Final Scorecard</div>
-
+      let html = `<div class="section-divider">Final Scorecard</div>
         <div class="verdict-badge ${verdictClass}">
           <div class="verdict-label">Verdict</div>
           <div class="verdict-value">${verdictIcon} ${sc.go_no_go}</div>
-          ${sc.go_condition ? `<div class="verdict-condition">Condition: ${sc.go_condition}</div>` : ''}
+          ${sc.go_condition ? `<div class="verdict-condition">Condition: ${escHtml(sc.go_condition)}</div>` : ''}
         </div>
-
         <table class="score-table">
-          <thead>
-            <tr>
-              <th>Dimension</th>
-              <th>Score</th>
-              <th>Bar</th>
-              <th>Rationale</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
+          <thead><tr><th>Dimension</th><th>Score</th><th>Bar</th></tr></thead>
+          <tbody>`;
 
-      for (const [name, dim] of Object.entries(sc.dimensions)) {
+      for (const [name, dim] of Object.entries(sc.dimensions || {})) {
         if (!dim || dim.score === undefined) continue;
         const pct = (dim.score / 10 * 100).toFixed(0);
-        html += `
-          <tr>
-            <td class="dim-name">${name}</td>
-            <td class="dim-score">${dim.score}/10</td>
-            <td class="dim-bar">
-              <div class="score-bar-track">
-                <div class="score-bar-fill" style="width:${pct}%"></div>
-              </div>
-            </td>
-            <td class="dim-rationale">${dim.rationale || ''}</td>
-          </tr>
-        `;
+        html += `<tr>
+          <td class="dim-name">${name}</td>
+          <td class="dim-score">${dim.score}/10</td>
+          <td class="dim-bar"><div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%"></div></div></td>
+        </tr>`;
       }
 
       html += `</tbody></table>
@@ -745,16 +611,22 @@
           <span class="overall-label">Overall</span>
           <span class="overall-value">${sc.overall_score}</span>
           <span class="overall-denom">/ 10</span>
-        </div>
-      `;
+        </div>`;
 
+      // Next actions with owner badges
       if (sc.next_actions && sc.next_actions.length) {
-        html += `<div class="next-actions" style="margin-top:32px">
-          <h3>Next Actions</h3>`;
-        sc.next_actions.forEach((action, i) => {
+        html += `<div class="section-divider" style="margin-top:36px">Next Actions</div>
+          <div class="actions-list">`;
+        sc.next_actions.forEach((item, i) => {
+          const action = typeof item === 'string' ? item : item.action;
+          const owner  = typeof item === 'string' ? 'PM' : (item.owner || 'PM');
+          const ownerClass = ownerCssClass(owner);
           html += `<div class="action-item">
             <span class="action-num">${i + 1}</span>
-            <span class="action-text">${action}</span>
+            <div class="action-content">
+              <div class="action-text">${escHtml(action)}</div>
+              <span class="owner-badge ${ownerClass}">${escHtml(owner)}</span>
+            </div>
           </div>`;
         });
         html += `</div>`;
@@ -763,12 +635,63 @@
       html += `<div class="meta-row">
         ${sc.debate_rounds_completed} round${sc.debate_rounds_completed !== 1 ? 's' : ''} &nbsp;·&nbsp;
         Consensus: ${sc.consensus_reached ? 'yes' : 'no'} &nbsp;·&nbsp;
-        Results saved to <code>./output/</code>
+        Saved to <code>./output/</code>
       </div>`;
 
       section.innerHTML = html;
-      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      section.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
+
+    function renderLeanCanvas(lc) {
+      const section = document.getElementById('scorecard-section');
+      const cells = [
+        {key: 'early_adopter',    label: 'Early Adopter',          highlight: true},
+        {key: 'problem',          label: 'Problem',                 highlight: false},
+        {key: 'unique_value_prop',label: 'Unique Value Proposition',highlight: false},
+        {key: 'solution',         label: 'Solution',                highlight: false},
+        {key: 'channels',         label: 'Channels',                highlight: false},
+        {key: 'customer_segments',label: 'Customer Segments',       highlight: false},
+        {key: 'revenue_streams',  label: 'Revenue Streams',         highlight: false},
+        {key: 'cost_structure',   label: 'Cost Structure',          highlight: false},
+        {key: 'key_metrics',      label: 'Key Metrics',             highlight: false},
+        {key: 'unfair_advantage', label: 'Unfair Advantage',        highlight: false},
+      ];
+
+      let html = `<div class="section-divider" style="margin-top:48px">Lean Canvas</div>
+        <div class="lean-canvas-grid">`;
+
+      cells.forEach(({key, label, highlight}) => {
+        const val = lc[key] || '—';
+        html += `<div class="canvas-cell${highlight ? ' highlight' : ''}">
+          <div class="canvas-cell-label">${label}</div>
+          <div class="canvas-cell-value">${escHtml(val)}</div>
+        </div>`;
+      });
+
+      html += `</div>`;
+      section.insertAdjacentHTML('beforeend', html);
+      section.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+
+    // ── Utilities ────────────────────────────
+    function ownerCssClass(owner) {
+      if (!owner) return 'owner-pm';
+      const o = owner.toLowerCase();
+      if (o === 'pm') return 'owner-pm';
+      if (o.includes('market')) return 'owner-marketer';
+      if (o.includes('tech')) return 'owner-tech';
+      if (o.includes('design')) return 'owner-design';
+      return 'owner-pm';
+    }
+
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Init ─────────────────────────────────
+    loadHistory();
   </script>
 </body>
 </html>

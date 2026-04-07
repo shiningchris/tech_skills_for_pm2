@@ -4,7 +4,7 @@ import queue
 import sys
 import threading
 import uuid
-from dataclasses import asdict
+from datetime import datetime
 
 import anthropic
 from dotenv import load_dotenv
@@ -13,7 +13,7 @@ from flask import Flask, Response, jsonify, render_template, request
 from agents import DesignAgent, MarketerAgent, PMAgent, TechAgent
 from config import Config
 from models.brief import ProductBrief
-from models.scorecard import Scorecard
+from models.scorecard import LeanCanvas, Scorecard
 from orchestrator.debate_loop import DebateOrchestrator
 from orchestrator.message_bus import MessageBus
 from output.exporter import Exporter
@@ -31,6 +31,39 @@ sprints: dict[str, queue.Queue] = {}
 @app.get("/")
 def index():
     return render_template("index.html")
+
+
+@app.get("/api/history")
+def history():
+    """Return metadata for the 3 most recent completed sprints."""
+    output_dir = Config().OUTPUT_DIR
+    if not os.path.isdir(output_dir):
+        return jsonify([])
+
+    files = sorted(
+        [f for f in os.listdir(output_dir) if f.endswith(".json")],
+        key=lambda f: os.path.getmtime(os.path.join(output_dir, f)),
+        reverse=True,
+    )[:3]
+
+    results = []
+    for fname in files:
+        try:
+            with open(os.path.join(output_dir, fname)) as f:
+                data = json.load(f)
+            sc = data.get("scorecard", {})
+            results.append({
+                "filename": fname,
+                "idea_title": data.get("idea_title", "Untitled"),
+                "go_no_go": sc.get("go_no_go", "—"),
+                "overall_score": sc.get("overall_score", 0),
+                "exported_at": data.get("exported_at", ""),
+                "scorecard": sc,
+            })
+        except Exception:
+            continue
+
+    return jsonify(results)
 
 
 @app.post("/api/start")
@@ -81,11 +114,10 @@ def stream(sprint_id: str):
                 event = q.get(timeout=15)
             except queue.Empty:
                 total_waited += 15
-                # Keepalive comment — prevents browser/proxy from closing idle SSE connection
                 yield ": keepalive\n\n"
                 continue
 
-            total_waited = 0  # reset on activity
+            total_waited = 0
             yield _sse(event)
 
             if event.get("type") in ("done", "error"):
@@ -136,15 +168,16 @@ def _run_debate(sprint_id: str, brief: ProductBrief, api_key: str, q: queue.Queu
 
         scorecard = orchestrator.run(brief)
 
-        # Save exports
         try:
             exporter = Exporter(output_dir=config.OUTPUT_DIR)
             exporter.save_json(scorecard, brief)
             exporter.save_markdown(scorecard, brief, bus)
         except Exception:
-            pass  # Export failure shouldn't kill the stream
+            pass
 
         q.put({"type": "scorecard", "data": _scorecard_to_dict(scorecard)})
+        if scorecard.lean_canvas:
+            q.put({"type": "lean_canvas", "data": _lean_canvas_to_dict(scorecard.lean_canvas)})
         q.put({"type": "done"})
 
     except Exception as exc:
@@ -179,9 +212,26 @@ def _scorecard_to_dict(sc: Scorecard) -> dict:
         "overall_score": sc.overall_score,
         "go_no_go": sc.go_no_go,
         "go_condition": sc.go_condition,
-        "next_actions": sc.next_actions,
+        "next_actions": [
+            {"action": a.action, "owner": a.owner} for a in sc.next_actions
+        ],
         "debate_rounds_completed": sc.debate_rounds_completed,
         "consensus_reached": sc.consensus_reached,
+    }
+
+
+def _lean_canvas_to_dict(lc: LeanCanvas) -> dict:
+    return {
+        "problem": lc.problem,
+        "customer_segments": lc.customer_segments,
+        "early_adopter": lc.early_adopter,
+        "unique_value_prop": lc.unique_value_prop,
+        "solution": lc.solution,
+        "channels": lc.channels,
+        "revenue_streams": lc.revenue_streams,
+        "cost_structure": lc.cost_structure,
+        "key_metrics": lc.key_metrics,
+        "unfair_advantage": lc.unfair_advantage,
     }
 
 
