@@ -9,6 +9,8 @@ from config import Config
 from models.brief import ProductBrief
 from models.message import AgentMessage
 
+MAX_CONTINUATIONS = 3  # safety cap on follow-up calls
+
 
 class BaseAgent(ABC):
     name: str
@@ -19,9 +21,7 @@ class BaseAgent(ABC):
         self.system_prompt = self.build_system_prompt()
 
     @abstractmethod
-    def build_system_prompt(self) -> str:
-        """Return the system prompt that defines this agent's persona."""
-        ...
+    def build_system_prompt(self) -> str: ...
 
     def respond(
         self,
@@ -32,20 +32,34 @@ class BaseAgent(ABC):
         max_tokens: int = None,
     ) -> AgentMessage:
         """
-        Call the Anthropic API with the full shared conversation history.
-        The instruction is NOT appended here — it must already be the last
-        message in conversation_history (added by the orchestrator).
+        Call the API and automatically continue if the response is cut off
+        (stop_reason == 'max_tokens'). Appends continuation calls until the
+        model signals end_turn or MAX_CONTINUATIONS is reached.
         """
-        response = self.client.messages.create(
-            model=self.config.MODEL_NAME,
-            max_tokens=max_tokens or self.config.MAX_TOKENS_PER_RESPONSE,
-            temperature=self.config.TEMPERATURE,
-            system=self.system_prompt,
-            messages=conversation_history,
-        )
-        content = response.content[0].text
+        limit = max_tokens or self.config.MAX_TOKENS_PER_RESPONSE
+        history = list(conversation_history)  # local copy we can extend
+
+        full_text = ""
+        for attempt in range(1 + MAX_CONTINUATIONS):
+            response = self.client.messages.create(
+                model=self.config.MODEL_NAME,
+                max_tokens=limit,
+                temperature=self.config.TEMPERATURE,
+                system=self.system_prompt,
+                messages=history,
+            )
+            chunk = response.content[0].text
+            full_text += chunk
+
+            if response.stop_reason != "max_tokens":
+                break  # finished naturally
+
+            # Response was cut — ask the model to continue exactly where it left off
+            history.append({"role": "assistant", "content": full_text})
+            history.append({"role": "user",      "content": "Continue exactly where you left off."})
+
         return AgentMessage(
             agent_name=self.name,
-            content=content,
+            content=full_text,
             round_number=round_number,
         )
