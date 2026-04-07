@@ -1,10 +1,9 @@
 import json
 import os
-from dataclasses import asdict
 from datetime import datetime
 
 from models.brief import ProductBrief
-from models.scorecard import Scorecard
+from models.scorecard import LeanCanvas, Scorecard
 from orchestrator.message_bus import MessageBus
 
 
@@ -20,10 +19,49 @@ class Exporter:
     def _timestamp(self) -> str:
         return datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
-    def save_json(self, scorecard: Scorecard, brief: ProductBrief) -> str:
+    def save_json(
+        self,
+        scorecard: Scorecard,
+        brief: ProductBrief,
+        bus: MessageBus = None,
+        lean_canvas: LeanCanvas = None,
+    ) -> str:
+        messages = []
+        if bus:
+            for msg in bus.agent_messages:
+                messages.append({
+                    "agent": msg.agent_name,
+                    "round": msg.round_number,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp,
+                })
+
+        canvas_data = None
+        if lean_canvas:
+            canvas_data = {
+                "problem": lean_canvas.problem,
+                "customer_segments": lean_canvas.customer_segments,
+                "early_adopter": lean_canvas.early_adopter,
+                "unique_value_prop": lean_canvas.unique_value_prop,
+                "solution": lean_canvas.solution,
+                "channels": lean_canvas.channels,
+                "revenue_streams": lean_canvas.revenue_streams,
+                "cost_structure": lean_canvas.cost_structure,
+                "key_metrics": lean_canvas.key_metrics,
+                "unfair_advantage": lean_canvas.unfair_advantage,
+            }
+
         payload = {
             "idea_title": brief.idea_title,
             "exported_at": datetime.utcnow().isoformat(),
+            "brief": {
+                "problem_statement": brief.problem_statement,
+                "proposed_solution": brief.proposed_solution,
+                "target_user": brief.target_user,
+                "revenue_model": brief.revenue_model,
+                "known_competitors": brief.known_competitors,
+                "stage": brief.stage,
+            },
             "scorecard": {
                 "dimensions": {
                     "market_size": self._dim(scorecard.market_size),
@@ -45,7 +83,10 @@ class Exporter:
                 "debate_rounds_completed": scorecard.debate_rounds_completed,
                 "consensus_reached": scorecard.consensus_reached,
             },
+            "lean_canvas": canvas_data,
+            "messages": messages,
         }
+
         filename = f"{self._slug(brief.idea_title)}_{self._timestamp()}.json"
         path = os.path.join(self.output_dir, filename)
         with open(path, "w") as f:

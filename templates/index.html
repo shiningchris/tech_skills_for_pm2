@@ -130,6 +130,16 @@
     .btn-primary:active { transform: scale(0.98); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    .btn-ghost {
+      background: transparent; color: var(--indigo);
+      border: 1.5px solid var(--indigo); padding: 9px 20px;
+      border-radius: 99px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, opacity 0.15s;
+      display: inline-flex; align-items: center; gap: 7px;
+      text-decoration: none;
+    }
+    .btn-ghost:hover { background: var(--indigo-light); }
+
     /* ── HISTORY PANEL ───────────────────── */
     .history-panel h3 {
       font-size: 11px; font-weight: 700; letter-spacing: 1px;
@@ -335,6 +345,13 @@
     .canvas-cell-value { font-size: 13px; line-height: 1.6; color: #374151; }
     .canvas-cell.highlight .canvas-cell-value { color: var(--text); }
 
+    /* ── PDF / ACTION BAR ────────────────── */
+    .action-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 12px; margin-top: 32px; padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
     .error-card {
       background: #FEE2E2; border: 1px solid #FECACA;
       border-radius: var(--radius); padding: 20px;
@@ -343,8 +360,14 @@
 
     .meta-row {
       font-size: 12px; color: var(--muted);
-      margin-top: 32px; padding-top: 20px;
-      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+
+    /* ── HISTORY TRANSCRIPT NOTE ─────────── */
+    .history-note {
+      font-size: 12px; color: var(--muted); background: var(--bg);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px 14px; margin-bottom: 24px;
     }
   </style>
 </head>
@@ -444,6 +467,9 @@
   </div>
 
   <script>
+    // ── State ────────────────────────────────
+    let currentSprintFile = null;
+
     // ── View management ──────────────────────
     function showView(name) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -458,6 +484,7 @@
       document.getElementById('scorecard-section').style.display = 'none';
       document.getElementById('submit-btn').disabled = false;
       document.getElementById('submit-btn').textContent = 'Start Validation Sprint →';
+      currentSprintFile = null;
       loadHistory();
     }
 
@@ -474,8 +501,8 @@
         el.innerHTML = items.map(item => {
           const cls = item.go_no_go === 'GO' ? 'go' : item.go_no_go === 'NO-GO' ? 'nogo' : 'conditional';
           const date = item.exported_at ? new Date(item.exported_at).toLocaleDateString() : '';
-          return `<div class="history-card" onclick="loadHistorySprint(${JSON.stringify(JSON.stringify(item))})">
-            <div class="history-card-title">${item.idea_title}</div>
+          return `<div class="history-card" onclick="openHistorySprint(${JSON.stringify(item.filename)})">
+            <div class="history-card-title">${escHtml(item.idea_title)}</div>
             <div class="history-card-meta">
               <span class="verdict-chip ${cls}">${item.go_no_go}</span>
               <span class="history-score">${item.overall_score}/10</span>
@@ -486,14 +513,54 @@
       } catch (e) { /* silent */ }
     }
 
-    function loadHistorySprint(itemJson) {
-      const item = JSON.parse(itemJson);
-      document.getElementById('debate-title').textContent = item.idea_title;
-      document.getElementById('debate-feed').innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">Loaded from history — full debate transcript saved in ./output/</p>';
+    async function openHistorySprint(filename) {
+      document.getElementById('debate-feed').innerHTML = '';
       document.getElementById('scorecard-section').innerHTML = '';
-      document.getElementById('scorecard-section').style.display = 'block';
+      document.getElementById('scorecard-section').style.display = 'none';
       showView('debate');
-      renderScorecard(item.scorecard);
+      setWaiting('Loading sprint…');
+
+      try {
+        const res = await fetch('/api/sprint/' + encodeURIComponent(filename));
+        if (!res.ok) throw new Error('Sprint not found');
+        const data = await res.json();
+
+        document.getElementById('debate-title').textContent = data.idea_title;
+        currentSprintFile = filename;
+        hideWaiting();
+
+        // Render full debate transcript
+        const messages = data.messages || [];
+        if (messages.length) {
+          let currentRound = 0;
+          messages.forEach(msg => {
+            if (msg.round !== currentRound) {
+              currentRound = msg.round;
+              renderRoundHeader(currentRound);
+            }
+            renderAgentCard({agent: msg.agent, content: msg.content});
+          });
+        } else {
+          const feed = document.getElementById('debate-feed');
+          feed.innerHTML = '<div class="history-note">Debate transcript not available for this sprint (saved before this feature was added). Future sprints include the full conversation.</div>';
+        }
+
+        // Render scorecard
+        if (data.scorecard) renderScorecard(data.scorecard);
+
+        // Render lean canvas
+        if (data.lean_canvas) renderLeanCanvas(data.lean_canvas);
+
+      } catch (err) {
+        hideWaiting();
+        renderError('Could not load sprint: ' + err.message);
+      }
+    }
+
+    // ── PDF download ─────────────────────────
+    function downloadPdf() {
+      if (!currentSprintFile) return;
+      window.location.href = '/api/pdf/' + encodeURIComponent(currentSprintFile);
     }
 
     // ── Form submit ──────────────────────────
@@ -507,6 +574,7 @@
       document.getElementById('debate-feed').innerHTML = '';
       document.getElementById('scorecard-section').innerHTML = '';
       document.getElementById('scorecard-section').style.display = 'none';
+      currentSprintFile = null;
       showView('debate');
 
       try {
@@ -535,8 +603,14 @@
         if (data.type === 'status')       { setWaiting(data.message); }
         if (data.type === 'scorecard')    { hideWaiting(); renderScorecard(data.data); }
         if (data.type === 'lean_canvas')  { renderLeanCanvas(data.data); }
-        if (data.type === 'done')         { hideWaiting(); es.close(); loadHistory(); }
-        if (data.type === 'error')        { hideWaiting(); renderError(data.message); es.close(); }
+        if (data.type === 'done') {
+          hideWaiting();
+          if (data.filename) currentSprintFile = data.filename;
+          appendActionBar();
+          es.close();
+          loadHistory();
+        }
+        if (data.type === 'error') { hideWaiting(); renderError(data.message); es.close(); }
       };
       es.onerror = () => { hideWaiting(); es.close(); };
     }
@@ -559,7 +633,7 @@
       const card = document.createElement('div');
       card.className = 'agent-card';
       card.dataset.agent = agent;
-      card.innerHTML = `<div class="agent-name">${agent}</div><div class="agent-body">${escHtml(content)}</div>`;
+      card.innerHTML = `<div class="agent-name">${escHtml(agent)}</div><div class="agent-body">${escHtml(content)}</div>`;
       document.getElementById('debate-feed').appendChild(card);
       card.scrollIntoView({behavior: 'smooth', block: 'end'});
     }
@@ -589,7 +663,7 @@
       let html = `<div class="section-divider">Final Scorecard</div>
         <div class="verdict-badge ${verdictClass}">
           <div class="verdict-label">Verdict</div>
-          <div class="verdict-value">${verdictIcon} ${sc.go_no_go}</div>
+          <div class="verdict-value">${verdictIcon} ${escHtml(sc.go_no_go)}</div>
           ${sc.go_condition ? `<div class="verdict-condition">Condition: ${escHtml(sc.go_condition)}</div>` : ''}
         </div>
         <table class="score-table">
@@ -600,7 +674,7 @@
         if (!dim || dim.score === undefined) continue;
         const pct = (dim.score / 10 * 100).toFixed(0);
         html += `<tr>
-          <td class="dim-name">${name}</td>
+          <td class="dim-name">${escHtml(name)}</td>
           <td class="dim-score">${dim.score}/10</td>
           <td class="dim-bar"><div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%"></div></div></td>
         </tr>`;
@@ -670,7 +744,27 @@
 
       html += `</div>`;
       section.insertAdjacentHTML('beforeend', html);
-      section.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+
+      // Add PDF download button after lean canvas (or update existing bar)
+      appendActionBar();
+    }
+
+    function appendActionBar() {
+      const section = document.getElementById('scorecard-section');
+      // Remove existing action bar if any
+      const existing = section.querySelector('.action-bar');
+      if (existing) existing.remove();
+
+      if (!currentSprintFile) return;
+
+      const bar = document.createElement('div');
+      bar.className = 'action-bar';
+      bar.innerHTML = `
+        <button class="btn-ghost" onclick="downloadPdf()">
+          ↓ Download PDF
+        </button>`;
+      section.appendChild(bar);
+      bar.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
 
     // ── Utilities ────────────────────────────

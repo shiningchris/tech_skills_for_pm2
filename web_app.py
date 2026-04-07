@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import queue
@@ -8,7 +9,7 @@ from datetime import datetime
 
 import anthropic
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from agents import DesignAgent, MarketerAgent, PMAgent, TechAgent
 from config import Config
@@ -64,6 +65,44 @@ def history():
             continue
 
     return jsonify(results)
+
+
+@app.get("/api/sprint/<filename>")
+def get_sprint(filename: str):
+    """Return full sprint data including debate transcript and lean canvas."""
+    if ".." in filename or "/" in filename or not filename.endswith(".json"):
+        return jsonify({"error": "Invalid filename"}), 400
+
+    path = os.path.join(Config().OUTPUT_DIR, filename)
+    if not os.path.exists(path):
+        return jsonify({"error": "Sprint not found"}), 404
+
+    with open(path) as f:
+        data = json.load(f)
+    return jsonify(data)
+
+
+@app.get("/api/pdf/<filename>")
+def download_pdf(filename: str):
+    """Generate and stream a PDF report for the given sprint."""
+    if ".." in filename or "/" in filename or not filename.endswith(".json"):
+        return jsonify({"error": "Invalid filename"}), 400
+
+    path = os.path.join(Config().OUTPUT_DIR, filename)
+    if not os.path.exists(path):
+        return jsonify({"error": "Sprint not found"}), 404
+
+    with open(path) as f:
+        data = json.load(f)
+
+    pdf_bytes = _generate_pdf(data)
+    pdf_name = filename.replace(".json", ".pdf")
+    return send_file(
+        io.BytesIO(pdf_bytes),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"validation-{pdf_name}",
+    )
 
 
 @app.post("/api/start")
@@ -168,21 +207,232 @@ def _run_debate(sprint_id: str, brief: ProductBrief, api_key: str, q: queue.Queu
 
         scorecard = orchestrator.run(brief)
 
+        saved_filename = None
         try:
             exporter = Exporter(output_dir=config.OUTPUT_DIR)
-            exporter.save_json(scorecard, brief)
+            saved_path = exporter.save_json(
+                scorecard, brief,
+                bus=bus,
+                lean_canvas=scorecard.lean_canvas,
+            )
             exporter.save_markdown(scorecard, brief, bus)
+            saved_filename = os.path.basename(saved_path)
         except Exception:
             pass
 
         q.put({"type": "scorecard", "data": _scorecard_to_dict(scorecard)})
         if scorecard.lean_canvas:
             q.put({"type": "lean_canvas", "data": _lean_canvas_to_dict(scorecard.lean_canvas)})
-        q.put({"type": "done"})
+        q.put({"type": "done", "filename": saved_filename})
 
     except Exception as exc:
         q.put({"type": "error", "message": str(exc)})
-        q.put({"type": "done"})
+        q.put({"type": "done", "filename": None})
+
+
+# ── PDF generation ────────────────────────────────────────────── #
+
+def _generate_pdf(data: dict) -> bytes:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.colors import HexColor, white
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer,
+        Table, TableStyle, HRFlowable,
+    )
+    from reportlab.lib.units import cm
+
+    W, _H = A4
+    MARGIN = 2.0 * cm
+    CW = W - 2 * MARGIN  # usable content width
+
+    # ── Palette ──────────────────────────────────────────────────
+    INDIGO     = HexColor('#6366F1')
+    INDIGO_BG  = HexColor('#EEF2FF')
+    GREY       = HexColor('#6B7280')
+    BORDER     = HexColor('#E5E7EB')
+    ROW_ALT    = HexColor('#F9FAFB')
+    TEXT       = HexColor('#111111')
+    BODY_C     = HexColor('#374151')
+
+    # ── Style factory ────────────────────────────────────────────
+    def S(name, **kw):
+        return ParagraphStyle(name, **kw)
+
+    sTitle   = S('title',  fontSize=20, fontName='Helvetica-Bold',   spaceAfter=4,  textColor=TEXT)
+    sMeta    = S('meta',   fontSize=9,  fontName='Helvetica',         spaceAfter=2,  textColor=GREY)
+    sSection = S('sec',    fontSize=12, fontName='Helvetica-Bold',    spaceBefore=16, spaceAfter=8, textColor=INDIGO)
+    sLabel   = S('lbl',    fontSize=8,  fontName='Helvetica-Bold',    spaceAfter=2,  textColor=GREY)
+    sILabel  = S('ilbl',   fontSize=8,  fontName='Helvetica-Bold',    spaceAfter=2,  textColor=INDIGO)
+    sValue   = S('val',    fontSize=9,  fontName='Helvetica',         leading=13,    textColor=BODY_C)
+    sIValue  = S('ival',   fontSize=9,  fontName='Helvetica',         leading=13,    textColor=TEXT)
+    sBody    = S('body',   fontSize=10, fontName='Helvetica',         leading=14,    spaceAfter=5,  textColor=BODY_C)
+    sSmall   = S('small',  fontSize=8,  fontName='Helvetica',         textColor=GREY)
+    sHdr     = S('hdr',    fontSize=9,  fontName='Helvetica-Bold',    textColor=GREY)
+    sDim     = S('dim',    fontSize=10, fontName='Helvetica',         textColor=BODY_C)
+    sScore   = S('sc',     fontSize=10, fontName='Helvetica-Bold',    textColor=INDIGO)
+
+    idea_title  = data.get('idea_title', 'Untitled')
+    exported_at = (data.get('exported_at') or '')[:10]
+    sc          = data.get('scorecard', {})
+    lc          = data.get('lean_canvas') or {}
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=MARGIN, rightMargin=MARGIN,
+                            topMargin=MARGIN,  bottomMargin=MARGIN)
+    story = []
+
+    # ── Header ───────────────────────────────────────────────────
+    story.append(Paragraph('Validation Sprint', sMeta))
+    story.append(Paragraph(idea_title, sTitle))
+    story.append(Paragraph(f'Generated {exported_at} · AI Founding Team', sMeta))
+    story.append(HRFlowable(width='100%', thickness=1, color=BORDER, spaceBefore=8, spaceAfter=16))
+
+    # ── Lean Canvas (first) ───────────────────────────────────────
+    if lc:
+        story.append(Paragraph('Lean Canvas', sSection))
+
+        CANVAS_CELLS = [
+            ('early_adopter',     'Early Adopter (ICP)',       True),
+            ('problem',           'Problem',                   False),
+            ('unique_value_prop', 'Unique Value Proposition',  False),
+            ('solution',          'Solution',                  False),
+            ('channels',          'Channels',                  False),
+            ('customer_segments', 'Customer Segments',         False),
+            ('revenue_streams',   'Revenue Streams',           False),
+            ('cost_structure',    'Cost Structure',            False),
+            ('key_metrics',       'Key Metrics',               False),
+            ('unfair_advantage',  'Unfair Advantage',          False),
+        ]
+
+        col_w = CW / 2
+        rows = []
+        bg_cmds = []
+
+        for i in range(0, len(CANVAS_CELLS), 2):
+            row = []
+            for j in range(2):
+                if i + j < len(CANVAS_CELLS):
+                    key, label, highlight = CANVAS_CELLS[i + j]
+                    val = lc.get(key) or '—'
+                    cell = [
+                        Paragraph(label.upper(), sILabel if highlight else sLabel),
+                        Paragraph(val, sIValue if highlight else sValue),
+                    ]
+                    if highlight:
+                        bg_cmds.append(('BACKGROUND', (j, i // 2), (j, i // 2), INDIGO_BG))
+                else:
+                    cell = [Paragraph('', sLabel)]
+                row.append(cell)
+            rows.append(row)
+
+        t = Table(rows, colWidths=[col_w, col_w])
+        t.setStyle(TableStyle([
+            ('BOX',         (0, 0), (-1, -1), 0.5, BORDER),
+            ('INNERGRID',   (0, 0), (-1, -1), 0.5, BORDER),
+            ('VALIGN',      (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING',  (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING',(0,0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING',(0, 0), (-1, -1), 10),
+        ] + bg_cmds))
+        story.append(t)
+        story.append(Spacer(1, 12))
+
+    # ── Scorecard ─────────────────────────────────────────────────
+    story.append(Paragraph('Scorecard', sSection))
+
+    verdict   = sc.get('go_no_go', '—')
+    overall   = sc.get('overall_score', 0)
+    go_cond   = sc.get('go_condition')
+
+    VC = {
+        'GO':             ('#DCFCE7', '#15803D'),
+        'NO-GO':          ('#FEE2E2', '#B91C1C'),
+        'CONDITIONAL GO': ('#FEF9C3', '#78350F'),
+    }
+    vc_bg, vc_txt = VC.get(verdict, ('#F3F4F6', '#6B7280'))
+
+    sVerdict = S('vv', fontSize=16, fontName='Helvetica-Bold', textColor=HexColor(vc_txt))
+    sVScore  = S('vs', fontSize=10, fontName='Helvetica',      textColor=HexColor(vc_txt))
+    sVCond   = S('vc', fontSize=9,  fontName='Helvetica-Oblique', textColor=HexColor(vc_txt))
+
+    vrows = [[Paragraph(verdict, sVerdict)], [Paragraph(f'Overall Score: {overall}/10', sVScore)]]
+    if go_cond:
+        vrows.append([Paragraph(f'Condition: {go_cond}', sVCond)])
+
+    vt = Table(vrows, colWidths=[CW])
+    vt.setStyle(TableStyle([
+        ('BACKGROUND',    (0, 0), (-1, -1), HexColor(vc_bg)),
+        ('TOPPADDING',    (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 14),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 14),
+        ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+    ]))
+    story.append(vt)
+    story.append(Spacer(1, 10))
+
+    # Dimension table
+    dims = sc.get('dimensions', {})
+    # Map stored keys (snake_case) → display names
+    DIM_LABELS = {
+        'market_size': 'Market Size', 'icp_clarity': 'ICP Clarity',
+        'gtm_viability': 'GTM Viability', 'technical_feasibility': 'Technical Feasibility',
+        'build_complexity': 'Build Complexity', 'ux_viability': 'UX Viability',
+        'user_journey_clarity': 'User Journey Clarity', 'competitive_moat': 'Competitive Moat',
+        'revenue_model_strength': 'Revenue Model Strength',
+        # also accept title-case keys from scorecard dict
+        'Market Size': 'Market Size', 'ICP Clarity': 'ICP Clarity',
+        'GTM Viability': 'GTM Viability', 'Technical Feasibility': 'Technical Feasibility',
+        'Build Complexity': 'Build Complexity', 'UX Viability': 'UX Viability',
+        'User Journey Clarity': 'User Journey Clarity', 'Competitive Moat': 'Competitive Moat',
+        'Revenue Model Strength': 'Revenue Model Strength',
+    }
+
+    dim_rows = [[Paragraph('DIMENSION', sHdr), Paragraph('SCORE', sHdr)]]
+    for key, d in dims.items():
+        if d and 'score' in d:
+            label = DIM_LABELS.get(key, key)
+            dim_rows.append([Paragraph(label, sDim), Paragraph(f"{d['score']}/10", sScore)])
+
+    if len(dim_rows) > 1:
+        row_bgs = [
+            ('BACKGROUND', (0, r), (-1, r), ROW_ALT if r % 2 == 0 else white)
+            for r in range(1, len(dim_rows))
+        ]
+        dt = Table(dim_rows, colWidths=[CW * 0.78, CW * 0.22])
+        dt.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, 0),  ROW_ALT),
+            ('LINEBELOW',     (0, 0), (-1, -2), 0.5, BORDER),
+            ('BOX',           (0, 0), (-1, -1), 0.5, BORDER),
+            ('TOPPADDING',    (0, 0), (-1, -1), 7),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 10),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN',         (1, 0), (1, -1),  'CENTER'),
+        ] + row_bgs))
+        story.append(dt)
+
+    # Next actions
+    next_actions = sc.get('next_actions', [])
+    if next_actions:
+        story.append(Paragraph('Next Actions', sSection))
+        for i, item in enumerate(next_actions, 1):
+            action = item.get('action', '') if isinstance(item, dict) else str(item)
+            owner  = item.get('owner', 'PM') if isinstance(item, dict) else 'PM'
+            story.append(Paragraph(f'{i}. <b>[{owner}]</b> {action}', sBody))
+
+    # Footer
+    story.append(Spacer(1, 20))
+    story.append(HRFlowable(width='100%', thickness=0.5, color=BORDER))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph(f'Validation Sprint · AI Founding Team · {idea_title}', sSmall))
+
+    doc.build(story)
+    return buf.getvalue()
 
 
 # ── Helpers ──────────────────────────────────────────────────── #
