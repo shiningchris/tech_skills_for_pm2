@@ -551,6 +551,9 @@
         // Render lean canvas
         if (data.lean_canvas) renderLeanCanvas(data.lean_canvas);
 
+        // Always show download button when viewing a saved sprint
+        appendActionBar();
+
       } catch (err) {
         hideWaiting();
         renderError('Could not load sprint: ' + err.message);

@@ -85,6 +85,7 @@ def get_sprint(filename: str):
 @app.get("/api/pdf/<filename>")
 def download_pdf(filename: str):
     """Generate and stream a PDF report for the given sprint."""
+    import traceback
     if ".." in filename or "/" in filename or not filename.endswith(".json"):
         return jsonify({"error": "Invalid filename"}), 400
 
@@ -92,10 +93,13 @@ def download_pdf(filename: str):
     if not os.path.exists(path):
         return jsonify({"error": "Sprint not found"}), 404
 
-    with open(path) as f:
-        data = json.load(f)
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        pdf_bytes = _generate_pdf(data)
+    except Exception as exc:
+        return jsonify({"error": str(exc), "trace": traceback.format_exc()}), 500
 
-    pdf_bytes = _generate_pdf(data)
     pdf_name = filename.replace(".json", ".pdf")
     return send_file(
         io.BytesIO(pdf_bytes),

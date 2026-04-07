@@ -202,10 +202,14 @@ class DebateOrchestrator:
             brief=brief,
             instruction=canvas_prompt,
             round_number=rounds_completed,
-            max_tokens=1024,
+            max_tokens=2048,
         )
         self.bus.add_agent_response(pm_msg)
-        return self._parse_lean_canvas(pm_msg.content)
+        try:
+            return self._parse_lean_canvas(pm_msg.content)
+        except Exception as exc:
+            self.on_message("__status__", f"Lean Canvas parse error: {exc}", rounds_completed)
+            return LeanCanvas()
 
     def _parse_scorecard(self, json_text: str, rounds_completed: int, consensus: bool) -> Scorecard:
         data = self._extract_json(json_text)
@@ -266,18 +270,24 @@ class DebateOrchestrator:
                 unfair_advantage=data.get("unfair_advantage", ""),
             )
         except Exception:
-            return LeanCanvas()  # return empty canvas rather than crashing
+            raise  # bubble up so _synthesize_lean_canvas can report the error
 
     def _extract_json(self, text: str) -> dict:
+        import re
         text = text.strip()
+        # Strip markdown code fences
         if text.startswith("```"):
             lines = text.split("\n")
             text = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else "\n".join(lines[1:])
+        # Isolate the first {...} block (handles preamble text)
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end > start:
+            text = text[start:end]
+        # Clean common LLM JSON mistakes: trailing commas before } or ]
+        text = re.sub(r",\s*}", "}", text)
+        text = re.sub(r",\s*]", "]", text)
         try:
             return json.loads(text)
-        except json.JSONDecodeError:
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            if start != -1 and end > start:
-                return json.loads(text[start:end])
-            raise ValueError(f"Could not parse JSON:\n{text[:200]}")
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Could not parse JSON ({exc}):\n{text[:300]}")
