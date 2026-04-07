@@ -501,7 +501,7 @@
         el.innerHTML = items.map(item => {
           const cls = item.go_no_go === 'GO' ? 'go' : item.go_no_go === 'NO-GO' ? 'nogo' : 'conditional';
           const date = item.exported_at ? new Date(item.exported_at).toLocaleDateString() : '';
-          return `<div class="history-card" onclick="openHistorySprint(${JSON.stringify(item.filename)})">
+          return `<div class="history-card" onclick="openHistorySprint('${item.filename}')">
             <div class="history-card-title">${escHtml(item.idea_title)}</div>
             <div class="history-card-meta">
               <span class="verdict-chip ${cls}">${item.go_no_go}</span>
