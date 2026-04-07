@@ -2,3 +2,4 @@ anthropic>=0.89.0
 python-dotenv>=1.0.0
 flask>=2.3.0
 reportlab>=4.0.0
+gunicorn>=21.0.0

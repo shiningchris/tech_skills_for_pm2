@@ -494,5 +494,6 @@ def _lean_canvas_to_dict(lc: LeanCanvas) -> dict:
 if __name__ == "__main__":
     if not os.environ.get("ANTHROPIC_API_KEY"):
         sys.exit("ERROR: ANTHROPIC_API_KEY is not set. Run: export ANTHROPIC_API_KEY=sk-ant-...")
-    print("Starting Validation Sprint UI at http://localhost:5000")
-    app.run(debug=False, threaded=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Starting Validation Sprint UI at http://localhost:{port}")
+    app.run(debug=False, threaded=True, host="0.0.0.0", port=port)
