@@ -25,9 +25,9 @@ class BaseAgent(ABC):
     @abstractmethod
     def build_system_prompt(self) -> str: ...
 
-    def _call_api(self, history: list, limit: int) -> anthropic.types.Message:
+    def _call_api(self, history: list, limit: int, on_status=None) -> anthropic.types.Message:
         """Call the API with exponential backoff on 529 overloaded errors."""
-        delay = 10  # seconds — start longer since overload takes time to clear
+        delay = 8  # seconds
         for attempt in range(MAX_RETRIES):
             try:
                 return self.client.messages.create(
@@ -39,9 +39,12 @@ class BaseAgent(ABC):
                 )
             except anthropic.APIStatusError as exc:
                 if exc.status_code == 529 and attempt < MAX_RETRIES - 1:
-                    print(f"[API 529 overloaded] waiting {delay}s before retry {attempt + 1}/{MAX_RETRIES - 1}…", flush=True)
+                    msg = f"API overloaded — retrying in {delay}s… (attempt {attempt + 1}/{MAX_RETRIES - 1})"
+                    print(f"[{self.name}] {msg}", flush=True)
+                    if on_status:
+                        on_status(msg)
                     time.sleep(delay)
-                    delay *= 2  # 10s → 20s → 40s → 80s
+                    delay *= 2  # 8 → 16 → 32 → 64
                 else:
                     raise
 

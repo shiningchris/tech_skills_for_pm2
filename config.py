@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 @dataclass
 class Config:
     MODEL_NAME: str = "claude-sonnet-4-6"
-    MAX_ROUNDS: int = 3
+    MAX_ROUNDS: int = 2
     MIN_ROUNDS: int = 2
     MAX_TOKENS_PER_RESPONSE: int = 2048
     TEMPERATURE: float = 0.7

@@ -195,44 +195,51 @@ class DebateOrchestrator:
 
     def _synthesize_lean_canvas(self, brief: ProductBrief, rounds_completed: int) -> LeanCanvas:
         self.on_message("__status__", "Building Lean Canvas…", rounds_completed)
-        canvas_prompt = self.pm.build_lean_canvas_prompt()
-        self.bus.add_orchestrator_prompt(canvas_prompt)
 
-        for attempt in range(2):  # 1 attempt + 1 retry
-            pm_msg = self.pm.respond(
-                conversation_history=self.bus.get_history(),
-                brief=brief,
-                instruction=canvas_prompt,
-                round_number=rounds_completed,
-                max_tokens=2048,
-            )
-            raw = pm_msg.content
-            print(f"[LEAN CANVAS attempt {attempt+1}] raw[:300]: {raw[:300]}", flush=True)
+        from agents.pm_agent import LEAN_CANVAS_SCHEMA
+
+        # Use a FRESH minimal conversation — not the full debate history.
+        # The full history (12+ long messages) makes JSON output unreliable.
+        last_pm_summary = self.bus.last_pm_message() or ""
+        user_content = (
+            f"{brief.to_text()}\n\n"
+            f"TEAM FINAL SUMMARY:\n{last_pm_summary[:1500]}\n\n"
+            "Based on the product brief and team summary above, output ONLY valid JSON "
+            "with no markdown and no text before or after, using this exact schema:\n"
+            f"{LEAN_CANVAS_SCHEMA}\n\n"
+            "Rules:\n"
+            "- early_adopter: specific job title, company stage, pain trigger, WTP signal\n"
+            "- channels: reference the specific early_adopter profile\n"
+            "- key_metrics: measurable leading indicators, not vanity metrics\n"
+            "- unfair_advantage: honest — if none yet, say so"
+        )
+        system = (
+            "You are a product strategist. Output ONLY a valid JSON object. "
+            "No markdown fences, no explanation, no text outside the JSON."
+        )
+
+        for attempt in range(2):
             try:
+                response = self.pm.client.messages.create(
+                    model=self.pm.config.MODEL_NAME,
+                    max_tokens=2048,
+                    temperature=0.3,
+                    system=system,
+                    messages=[{"role": "user", "content": user_content}],
+                )
+                raw = response.content[0].text
+                print(f"[LEAN CANVAS attempt {attempt+1}] raw[:400]:\n{raw[:400]}", flush=True)
                 canvas = self._parse_lean_canvas(raw)
-                # Reject silently empty canvases
                 if not any([canvas.problem, canvas.customer_segments, canvas.early_adopter,
                             canvas.unique_value_prop, canvas.solution]):
-                    raise ValueError("All lean canvas fields are empty")
-                self.bus.add_agent_response(pm_msg)
+                    raise ValueError("All key fields are empty after parsing")
                 return canvas
             except Exception as exc:
                 print(f"[LEAN CANVAS attempt {attempt+1} FAILED]: {exc}", flush=True)
                 if attempt == 0:
-                    # Retry with a fresh explicit prompt
-                    retry_prompt = (
-                        "Your previous response could not be parsed as JSON. "
-                        "Output ONLY a valid JSON object with these exact keys: "
-                        "problem, customer_segments, early_adopter, unique_value_prop, "
-                        "solution, channels, revenue_streams, cost_structure, "
-                        "key_metrics, unfair_advantage. "
-                        "No markdown, no explanation, just the JSON object."
-                    )
-                    self.bus.add_agent_response(pm_msg)
-                    self.bus.add_orchestrator_prompt(retry_prompt)
-                    canvas_prompt = retry_prompt
+                    self.on_message("__status__", "Lean Canvas retry…", rounds_completed)
 
-        self.on_message("__status__", "Lean Canvas could not be generated — skipping.", rounds_completed)
+        self.on_message("__status__", "Lean Canvas could not be generated.", rounds_completed)
         return LeanCanvas()
 
     def _parse_scorecard(self, json_text: str, rounds_completed: int, consensus: bool) -> Scorecard:
